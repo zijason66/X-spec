@@ -1,0 +1,35 @@
+{
+  "name": "x-spec",
+  "version": "1.0.0",
+  "description": "SDD规范驱动开发框架 - 集成OpenSpec与SuperPowers",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "x-spec": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "inquirer": "^9.2.23",
+    "ora": "^8.0.1",
+    "yaml": "^2.4.5"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.14.9",
+    "tsx": "^4.15.7",
+    "typescript": "^5.5.2",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

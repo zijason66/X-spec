@@ -1,0 +1,218 @@
+# x-spec 斜杠命令定义
+# 供AI编码助手集成使用
+
+commands:
+  knowledge:
+    description: "交互式注入项目知识上下文（业务背景/技术栈/API依赖/SDK依赖/MCP外部知识源）"
+    usage: "/xspec:knowledge"
+    params:
+      - name: category
+        required: false
+        description: "仅注入特定分类 (business|tech-stack|api|sdk|mcp|mcp:<name>|all)"
+    flags:
+      - name: skip-completed
+        description: "跳过已有内容的分类"
+      - name: mcp-only
+        description: "仅执行MCP知识源注入，跳过交互式分类"
+    stage: "前置阶段"
+
+  propose:
+    description: "发起变更提案，生成OpenSpec结构化变更文档包（自动引用知识上下文）"
+    usage: "/xspec:propose <变更描述>"
+    params:
+      - name: description
+        required: true
+        description: "变更意图描述"
+      - name: name
+        required: false
+        description: "变更名称（自动生成则留空）"
+    flags:
+      - name: skip-knowledge-check
+        description: "跳过知识注入检查"
+    artifacts:
+      - proposal.md
+      - design.md
+      - tasks.md
+      - knowledge-ref.md
+      - specs/
+    stage: "提案阶段"
+
+  review:
+    description: "对变更提案执行自动方案审核（1-3轮 subagent 审核），完成后需人工确认才能进入编码阶段"
+    usage: "/xspec:review [变更名称]"
+    params:
+      - name: changeName
+        required: false
+        description: "变更名称（默认使用活动变更）"
+    flags:
+      - name: rounds
+        description: "最多审核轮数（1-3，默认3）"
+      - name: min-rounds
+        description: "最少审核轮数（默认1）"
+      - name: auto-approve-score
+        description: "自动通过的最低分数（0-100，默认80）"
+      - name: no-human-approval
+        description: "跳过人工确认，自动审核通过即可进入编码"
+      - name: skip-auto
+        description: "跳过自动审核，直接进入人工确认等待"
+    sub_commands:
+      - name: "approve <changeName>"
+        description: "人工批准提案，允许进入编码阶段"
+        flags:
+          - name: message
+            description: "审批备注"
+      - name: "reject <changeName>"
+        description: "人工驳回提案，需重新设计"
+        flags:
+          - name: message
+            description: "驳回原因"
+      - name: "status [changeName]"
+        description: "查看当前审核状态和历史"
+    stage: "审核阶段"
+
+  apply:
+    description: "按tasks.md逐项执行变更任务（需方案审核通过后才可执行）"
+    usage: "/xspec:apply [变更名称]"
+    params:
+      - name: change
+        required: false
+        description: "变更名称（默认使用活动变更）"
+      - name: task
+        required: false
+        description: "指定执行某个任务编号"
+    flags:
+      - name: dry-run
+        description: "仅展示执行计划"
+      - name: skip-review-check
+        description: "跳过审核状态检查（谨慎使用）"
+    stage: "执行阶段"
+
+  archive:
+    description: "归档已完成的变更提案，合并规范增量"
+    usage: "/xspec:archive <变更名称>"
+    params:
+      - name: change
+        required: true
+        description: "变更名称"
+    flags:
+      - name: bulk
+        description: "批量归档所有已完成变更"
+    stage: "归档阶段"
+
+  verify:
+    description: "验证实现与OpenSpec规范的一致性"
+    usage: "/xspec:verify [变更名称]"
+    params:
+      - name: change
+        required: false
+        description: "变更名称"
+    flags:
+      - name: strict
+        description: "严格模式：所有场景必须完全匹配"
+    stage: "验证阶段"
+
+  run:
+    description: "按默认SDD流程串接执行（知识注入→提案→审查→实现→验证→归档）"
+    usage: "/xspec:run"
+    params:
+      - name: template
+        required: false
+        description: "流程模板名称 (sdd-standard|sdd-quick|sdd-full)"
+      - name: description
+        required: false
+        description: "变更描述（propose阶段使用）"
+    flags:
+      - name: dry-run
+        description: "仅展示执行计划"
+      - name: from
+        description: "从指定阶段开始执行"
+    stage: "流程执行"
+
+  new:
+    description: "新建变更（扩展模式，先检查是否有未完成变更）"
+    usage: "/xspec:new <变更描述>"
+    stage: "扩展模式"
+
+  continue:
+    description: "继续进行中的变更（扩展模式）"
+    usage: "/xspec:continue"
+    stage: "扩展模式"
+
+  ff:
+    description: "快速推进变更（扩展模式，跳过部分评审）"
+    usage: "/xspec:ff <变更描述>"
+    stage: "扩展模式"
+
+  onboard:
+    description: "项目上手 - 为现有代码库生成初始规范"
+    usage: "/xspec:onboard"
+    stage: "扩展模式"
+
+# SDD标准工作流阶段
+workflow-stages:
+  1-knowledge:
+    description: "知识注入阶段 - 在SDD开发前注入项目上下文（含MCP外部知识源）"
+    command: knowledge
+    required: true
+    output: knowledge/
+
+  2-propose:
+    description: "提案阶段 - 发起变更提案并生成工件包（自动触发审核）"
+    command: propose
+    required: true
+    depends_on: [1-knowledge]
+    output: changes/{name}/
+
+  3-auto-review:
+    description: "自动审核阶段 - subagent 执行 1-3 轮方案审核，生成 review-report.md"
+    command: review
+    required: true
+    depends_on: [2-propose]
+    output: changes/{name}/review-report.md
+    config:
+      min-rounds: 1
+      max-rounds: 3
+      auto-approve-score: 80
+
+  4-human-confirm:
+    description: "人工确认阶段 - 审阅 review-report.md 后执行 approve 或 reject"
+    action: manual.confirm
+    required: true
+    depends_on: [3-auto-review]
+    commands:
+      approve: "x-spec review approve {name}"
+      reject:  "x-spec review reject  {name} -m '原因'"
+
+  5-implement:
+    description: "实现阶段 - 按tasks.md逐项编码（仅在方案批准后可执行）"
+    command: apply
+    required: true
+    depends_on: [4-human-confirm]
+
+  6-verify:
+    description: "验证阶段 - 验证实现一致性"
+    command: verify
+    required: true
+    depends_on: [5-implement]
+
+  7-archive:
+    description: "归档阶段 - 归档变更并合并规范增量"
+    command: archive
+    depends_on: [6-verify]
+
+# 流程模板定义（YAML格式，存储在 templates/workflows/ 目录）
+workflow-templates:
+  sdd-standard:
+    description: "SDD规范驱动开发标准流程"
+    file: "templates/workflows/sdd-standard.yml"
+    stages: [knowledge, propose, review, implement, verify, archive]
+
+  sdd-quick:
+    description: "SDD快速开发流程（跳过知识注入和人工审查）"
+    file: "templates/workflows/sdd-quick.yml"
+    stages: [propose, implement, verify, archive]
+
+  sdd-full:
+    description: "SDD完整流程（含设计评审、单元测试、集成验证）"
+    file: "templates/workflows/sdd-full.yml"
+    stages: [knowledge, propose, design-review, implement, unit-test, integration-verify, archive]

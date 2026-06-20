@@ -257,20 +257,38 @@ commands:
 ### 层间数据流
 
 ```
-knowledge/ ──────────────────────────────────────────────────────┐
-                                                                  │
-openspec/changes/<name>/                                          │ 上下文注入
-  proposal.md ──┐                                                 │
-  specs/        ├──► [架构师审查] ──► tasks.md ──► plans/*.md ──► execute
-  design.md ────┘                                     │
-  tasks.md                                            │ 子代理
-                                                      ▼
-                                               code + tests
-                                                      │
-                                               [代码审查]
-                                                      │
-                                                      ▼
-                                          openspec/archive/<name>/
+┌─ 规格层输入 ──────────────────────────────────────────────────┐
+│  knowledge/                 (知识上下文)                       │
+│  openspec/changes/<name>/   (变更文档集)                       │
+│    ├── proposal.md          (变更动机与范围)                    │
+│    ├── specs/               (Given-When-Then 场景)             │
+│    ├── design.md            (技术方案)                         │
+│    └── tasks.md             (原子任务清单)  ◄── 执行层入口      │
+└──────────────────────────────┬────────────────────────────────┘
+                               │ 架构师 / 开发者审查
+                               ▼
+┌─ 执行层流转 (Superpowers) ───────────────────────────────────┐
+│                                                              │
+│  [brainstorm]  tasks.md + knowledge/                         │
+│       │        → specs/<name>-impl.md  (实现路径确定)         │
+│       ▼                                                      │
+│  [plan]        specs/<name>-impl.md                          │
+│       │        → plans/<name>-plan.md  (TDD 执行计划)         │
+│       ▼                                                      │
+│  [execute]     plans/<name>-plan.md                          │
+│       │        → code + tests          (子代理并行实现)        │
+│       ▼                                                      │
+│  [finish]      code + tests                                  │
+│                → review-report.md     (代码审查报告)          │
+└──────────────────────────────┬────────────────────────────────┘
+                               │ verify（规范一致性校验）
+                               ▼
+┌─ 归档 ────────────────────────────────────────────────────────┐
+│  openspec/archive/<name>/                                     │
+│    ├── proposal.md / design.md / tasks.md                    │
+│    ├── review-report.md                                      │
+│    └── specs/  (合并增量后的最终规范)                          │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ## 流程模板

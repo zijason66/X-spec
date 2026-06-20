@@ -403,6 +403,87 @@ x-spec/
 └── x-spec.yml              ← 框架配置
 ```
 
+## 示例：DemoService 初始化前后目录结构对比
+
+以一个典型的 Java/Maven 后端服务 `DemoService` 为例，展示执行 `x-spec init` 前后的目录结构变化。X-spec 遵循**棕地优先**理念，原有项目结构完全保留，所有SDD规范产物隔离在新增的 `x-spec/` 子目录内。
+
+### 初始化前（传统 Java/Maven 项目）
+
+```
+DemoService/
+├── .idea/                       ← IDE 配置（IntelliJ IDEA）
+├── .mvn/                        ← Maven Wrapper 支持
+├── build/                       ← 构建产物输出目录
+│   └── classes/
+├── src/                         ← Java 源码
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/demoservice/
+│   │   │       ├── controller/
+│   │   │       ├── service/
+│   │   │       ├── repository/
+│   │   │       └── DemoServiceApplication.java
+│   │   └── resources/
+│   │       └── application.yml
+│   └── test/
+│       └── java/
+├── target/                      ← Maven 编译产物
+├── .gitignore
+├── mvnw                         ← Maven Wrapper 脚本（Unix）
+├── mvnw.cmd                     ← Maven Wrapper 脚本（Windows）
+├── pom.xml                      ← Maven 项目对象模型
+└── README.md
+```
+
+### 初始化后（执行 `x-spec init` 后）
+
+```
+DemoService/
+├── .idea/                       ← 原有保留
+├── .mvn/                        ← 原有保留
+├── build/                       ← 原有保留
+├── src/                         ← 原 Java 源码不动
+├── target/                      ← 原有保留
+├── x-spec/                      ← ✨ X-spec 新增的 SDD 规范目录
+│   ├── specs/                   ← 功能规范
+│   │   ├── xspec-init/spec.md
+│   │   ├── xspec-workflow/spec.md
+│   │   ├── xspec-template/spec.md
+│   │   └── xspec-knowledge/spec.md
+│   ├── changes/                 ← 变更提案（空，等待 propose 填充）
+│   ├── archive/                 ← 归档目录（空，等待 archive 填充）
+│   ├── workflows/               ← 作业流定义
+│   │   └── sdd-standard-flow.yml
+│   ├── templates/
+│   │   ├── workflows/           ← 流程模板（YAML）
+│   │   │   ├── sdd-standard.yml
+│   │   │   ├── sdd-quick.yml
+│   │   │   ├── sdd-full.yml
+│   │   │   └── superpower.yml
+│   │   └── code/                ← 代码模板（空，等待 template extract 填充）
+│   ├── knowledge/               ← 知识注入模板
+│   │   ├── README.md
+│   │   ├── business.md
+│   │   ├── tech-stack.md
+│   │   ├── api.md
+│   │   └── sdk.md
+│   └── x-spec.yml               ← 框架配置（含 MCP 知识源、review、sdd 等配置）
+├── .gitignore                   ← 原有保留
+├── mvnw                         ← 原有保留
+├── mvnw.cmd                     ← 原有保留
+├── pom.xml                      ← 原 Maven 配置不动
+└── README.md                    ← 原有保留
+```
+
+### 关键变化说明
+
+| 维度 | 说明 |
+|------|------|
+| **零侵入** | 原有 `pom.xml`、`src/`、`build/`、`target/` 等结构完全保留，构建流程不受影响 |
+| **隔离收纳** | 所有SDD产物（规范、变更、作业流、知识、模板）统一收纳在 `x-spec/` 子目录下 |
+| **Git 友好** | `x-spec/` 整体可纳入版本控制，规范随代码一同演进，作为活文档持久存在 |
+| **立即可用** | 初始化即生成 4 套流程模板、1 套默认作业流、4 份知识模板与 4 份自描述规范，可直接进入 `x-spec knowledge` → `x-spec propose` 流程 |
+
 ## 快速开始
 
 ### 前置条件

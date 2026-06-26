@@ -2,6 +2,7 @@
 
 import { program } from 'commander';
 import { initCommand } from './commands/init.js';
+import { initTemplateCommand } from './commands/init-template.js';
 import { knowledgeCommand } from './commands/knowledge.js';
 import { modeCommand } from './commands/mode.js';
 import { proposeCommand } from './commands/propose.js';
@@ -20,6 +21,7 @@ program
   .version('1.0.0');
 
 program.addCommand(initCommand);
+program.addCommand(initTemplateCommand);
 program.addCommand(knowledgeCommand);
 program.addCommand(modeCommand);
 program.addCommand(proposeCommand);

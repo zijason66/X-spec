@@ -4,11 +4,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveProjectRoot, getXSpecRoot, isInitialized, writeYAML, writeMarkdown } from '../utils.js';
 import type { WorkflowTemplate } from '../types.js';
+import {
+  scanProject,
+  renderScanSummary,
+} from '../core/project-scanner.js';
+import {
+  InitTemplateEngine,
+  DEFAULT_TEMPLATE_NAME,
+} from '../core/init-template-engine.js';
 
 export const initCommand = new Command('init')
   .description('初始化项目SDD配置，创建x-spec规范目录结构')
   .option('-p, --path <path>', '项目根路径', '.')
   .option('--profile <profile>', '工作流配置档案 (standard|extended|minimal)', 'standard')
+  .option('--init-template <name>', '指定 init 渲染模板（默认 default，可用 x-spec init-template 创建自定义模板）', DEFAULT_TEMPLATE_NAME)
   .option('--force', '强制覆盖已有配置')
   .action(async (opts) => {
     const root = resolveProjectRoot(opts.path);
@@ -29,6 +38,7 @@ export const initCommand = new Command('init')
       'workflow',
       'templates/workflows',   // 流程模板目录
       'templates/code',        // 代码模板目录
+      'templates/init',        // init 渲染模板目录
       'knowledge',
     ];
 
@@ -61,6 +71,47 @@ export const initCommand = new Command('init')
     // 生成知识注入模板
     createKnowledgeTemplates(path.join(xspecRoot, 'knowledge'));
 
+    // 确保 init 渲染模板脚手架存在（自动创建 default 模板）
+    const templateEngine = new InitTemplateEngine(root);
+    templateEngine.ensureDefaultTemplate();
+
+    // 校验用户指定的模板
+    const templateName: string = opts.initTemplate || DEFAULT_TEMPLATE_NAME;
+    if (!templateEngine.exists(templateName)) {
+      console.warn(chalk.yellow(`⚠ 指定的 init 渲染模板 "${templateName}" 不存在，回退到 default`));
+    }
+    const effectiveTemplate = templateEngine.exists(templateName) ? templateName : DEFAULT_TEMPLATE_NAME;
+
+    // 扫描代码仓，按指定模板渲染 knowledge 索引
+    console.log(chalk.cyan('\n扫描代码仓建立项目知识底座...\n'));
+    let scanSummary = '';
+    try {
+      const scan = scanProject(root);
+      const result = templateEngine.renderAndWrite(
+        effectiveTemplate,
+        scan,
+        path.join(xspecRoot, 'knowledge'),
+      );
+      scanSummary = renderScanSummary(scan);
+      console.log(chalk.green('✓ 项目知识底座已建立\n'));
+      console.log(scanSummary);
+      console.log();
+      console.log(chalk.cyan(`init 渲染模板: ${effectiveTemplate}`));
+      if (result.written.length > 0) {
+        console.log(chalk.gray(`  已输出: ${result.written.join(', ')}`));
+      }
+      if (result.omitted.length > 0) {
+        console.log(chalk.gray(`  已省略: ${result.omitted.join(', ')}`));
+      }
+      for (const fb of result.fallbacks) {
+        console.warn(chalk.yellow(`  ⚠ ${fb.key}: ${fb.reason}`));
+      }
+      console.log();
+    } catch (e: any) {
+      console.warn(chalk.yellow(`⚠ 项目扫描失败，knowledge 目录保留默认模板: ${e.message}`));
+    }
+
+
     console.log(chalk.green('✓ 初始化完成\n'));
     console.log(chalk.cyan('已创建目录结构:'));
     console.log('  x-spec/');
@@ -70,26 +121,41 @@ export const initCommand = new Command('init')
     console.log('  ├── workflow/              ← 工作流定义');
     console.log('  ├── templates/');
     console.log('  │   ├── workflows/          ← 流程模板 (YAML)');
-    console.log('  │   └── code/               ← 代码模板');
-    console.log('  ├── knowledge/              ← 知识注入（含MCP外部源）');
+    console.log('  │   ├── code/               ← 代码模板');
+    console.log('  │   └── init/               ← init 渲染模板（可自定义）');
+    console.log('  ├── knowledge/              ← 知识底座（已按模板渲染填充）');
+    console.log('  │   ├── architecture.md     ← 代码架构索引');
+    console.log('  │   ├── tech-stack.md       ← 技术栈');
+    console.log('  │   ├── api.md              ← 外部 API 调用');
+    console.log('  │   ├── business.md         ← 业务背景线索');
+    console.log('  │   ├── schema.md           ← 数据表结构');
+    console.log('  │   ├── class-index.md      ← 关键类索引');
+    console.log('  │   └── sdk.md              ← SDK 依赖');
     console.log('  └── x-spec.yml              ← 框架配置（含MCP知识源配置）');
     console.log();
-    console.log(chalk.yellow('流程模板:'));
-    console.log('  ' + chalk.gray('templates/workflows/sdd-standard.yml    ← SDD标准流程 (>500行)'));
-    console.log('  ' + chalk.gray('templates/workflows/sdd-quick.yml       ← SDD快速流程'));
-    console.log('  ' + chalk.gray('templates/workflows/sdd-full.yml        ← SDD完整流程'));
-    console.log('  ' + chalk.yellow('templates/workflows/superpower.yml      ← SuperPower快速交付 (100-500行)'));
+    console.log(chalk.yellow('流程模板（开发具体需求时按需选择，非Init阶段决策）:'));
+    console.log('  ' + chalk.gray('templates/workflows/sdd-standard.yml    ← SDD标准流程（6阶段）'));
+    console.log('  ' + chalk.gray('templates/workflows/sdd-quick.yml       ← SDD快速流程（4阶段，紧急修复）'));
+    console.log('  ' + chalk.gray('templates/workflows/sdd-full.yml        ← SDD完整流程（7阶段，高风险变更）'));
+    console.log('  ' + chalk.yellow('templates/workflows/superpower.yml      ← SuperPower 快速交付（100-500行）'));
     console.log();
-    console.log(chalk.yellow('开发模式（按代码量自动路由）:'));
+    console.log(chalk.yellow('说明:'));
+    console.log('  ' + chalk.gray('Init 阶段只建立项目知识底座，不做开发模式选择。'));
+    console.log('  ' + chalk.gray('开发具体需求时，根据工作量与熟练度自行选择流程：'));
     console.log('  ' + chalk.blue('💬 < 100行')  + '   对话式 — 直接与AI对话，可选补充spec沉淀');
     console.log('  ' + chalk.yellow('⚡ 100-500行') + '  SuperPower — 快速交付，自动生成spec文档');
-    console.log('  ' + chalk.green('📋 > 500行')  + '   SDD完整流程 — 知识注入→提案→审核→编码→验证');
+    console.log('  ' + chalk.green('📋 > 500行')  + '   SDD标准/完整流程 — 知识注入→提案→审核→编码→验证');
     console.log();
-    console.log(chalk.yellow('下一步:'));
+    console.log(chalk.yellow('自定义 init 渲染模板:'));
+    console.log('  ' + chalk.cyan('x-spec init-template list') + '       ← 列出可用模板');
+    console.log('  ' + chalk.cyan('x-spec init-template create <name>') + ' ← 创建自定义模板');
+    console.log('  ' + chalk.cyan('x-spec init --init-template <name>') + ' ← 按指定模板初始化');
+    console.log();
+    console.log(chalk.yellow('下一步（开发具体需求时）:'));
     console.log('  ' + chalk.cyan('x-spec mode "需求描述"') + '      ← 智能评估并推荐开发模式');
     console.log('  ' + chalk.cyan('x-spec sp "需求描述"') + '         ← SuperPower 快速开发启动');
     console.log('  ' + chalk.cyan('x-spec propose "需求描述"') + '   ← SDD 完整流程');
-    console.log('  ' + chalk.cyan('x-spec knowledge') + '            ← 注入项目知识上下文（SDD前置）');
+    console.log('  ' + chalk.gray('（所有流程均基于本次 Init 沉淀的项目知识底座启动）'));
     console.log();
   });
 

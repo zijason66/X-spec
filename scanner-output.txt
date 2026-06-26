@@ -1,0 +1,35 @@
+﻿node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Transform failed with 1 error:
+D:\AI_Coding\SDD\X-spec\src\core\project-scanner.ts:454:48: ERROR: Unexpected ")" in regular expression
+    at failureErrorWithLog (D:\AI_Coding\SDD\X-spec\node_modules\esbuild\lib\main.js:1748:15)
+    at D:\AI_Coding\SDD\X-spec\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (D:\AI_Coding\SDD\X-spec\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (D:\AI_Coding\SDD\X-spec\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (D:\AI_Coding\SDD\X-spec\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:563:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+    at Readable.push (node:internal/streams/readable:394:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) {
+  name: 'TransformError'
+}
+
+Node.js v24.14.1
+✖ test\scanner.test.ts (256.6713ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 268.6594
+
+✖ failing tests:
+
+test at test\scanner.test.ts:1:1
+✖ test\scanner.test.ts (256.6713ms)
+  'test failed'

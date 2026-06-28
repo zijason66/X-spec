@@ -1,0 +1,12 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "bb1c3933a6e10577ad946173143661a94253463e",
+  "prompts": {},
+  "humans": {
+    "h_27eda58cfbe5e4": {
+      "author": "zijason66 <zijason66@gmail.com>"
+    }
+  }
+}

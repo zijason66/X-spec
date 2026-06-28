@@ -1,0 +1,19 @@
+ai_stats_verify_demo.js
+  s_d5de545c28f54e::t_764e4f291af87b 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "9e7b1dd032af70a9e09ed759dc0d26f1f04cbcbc",
+  "prompts": {},
+  "sessions": {
+    "s_d5de545c28f54e": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1782660592197507400",
+        "model": "unknown"
+      },
+      "human_author": "zijason66 <zijason66@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+ai_stats_final_demo.js
+  s_24478dd6b91989::t_25408d17705672 1-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "08933d9b2727f5dee5cd5632a41e33411703f68a",
+  "prompts": {},
+  "sessions": {
+    "s_24478dd6b91989": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1782660927426257100",
+        "model": "unknown"
+      },
+      "human_author": "zijason66 <zijason66@gmail.com>"
+    }
+  }
+}
